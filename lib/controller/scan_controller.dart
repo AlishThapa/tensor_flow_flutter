@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter_tflite/flutter_tflite.dart';
 import 'package:get/get.dart';
+import 'package:logger/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class ScanController extends GetxController {
@@ -10,16 +11,13 @@ class ScanController extends GetxController {
 
   var isCameraInitialized = false.obs;
   var cameraCount = 0;
-  var x,
-      y,
-      w,
-      h = 0.0;
+  var x, y, w, h = 0.0;
   var label = '';
 
   @override
   void onInit() {
-    initCamera();
     super.onInit();
+
     initTflite();
   }
 
@@ -29,17 +27,14 @@ class ScanController extends GetxController {
     super.dispose();
   }
 
-
   initCamera() async {
-    if (await Permission.camera
-        .request()
-        .isGranted) {
+    if (await Permission.camera.request().isGranted) {
       cameras = await availableCameras();
       cameraController = await CameraController(cameras[0], ResolutionPreset.max);
       await cameraController.initialize().then((value) {
         cameraController.startImageStream((image) {
           cameraCount++;
-          if (cameraCount % 10 == 0) {
+          if (cameraCount % 20 == 0) {
             cameraCount = 0;
             objectDetector(image);
           }
@@ -61,12 +56,13 @@ class ScanController extends GetxController {
       numThreads: 1,
       useGpuDelegate: false,
     );
+    initCamera();
   }
 
   objectDetector(CameraImage image) async {
     var detector = await Tflite.runModelOnFrame(
       bytesList: image.planes.map(
-            (e) {
+        (e) {
           return e.bytes;
         },
       ).toList(),
@@ -78,7 +74,10 @@ class ScanController extends GetxController {
       asynch: true,
     );
     if (detector != null) {
-      print('Result is $detector');
+      if (detector.first['confidence'] * 100 > 45) {
+        Logger().d('Result is $detector');
+      }
+      // Logger().d('Result when false is $detector');
     }
   }
 }

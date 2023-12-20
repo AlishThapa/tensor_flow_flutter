@@ -39,6 +39,7 @@ dependencies:
   camera: ^0.10.5+7
   permission_handler: ^11.1.0
   flutter_tflite: ^1.0.1
+  logger: ^2.0.2+1
 
 
 dev_dependencies:
