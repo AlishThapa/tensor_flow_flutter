@@ -12,18 +12,19 @@ class ScanController extends GetxController {
   var isCameraInitialized = false.obs;
   var cameraCount = 0;
   var x, y, w, h = 0.0;
-  var label = '';
+  var label = ''.obs;
 
   @override
   void onInit() {
     super.onInit();
-
-    initTflite();
+    initCamera();
+    loadModel();
   }
 
   @override
-  void dispose() {
+  void dispose() async {
     cameraController.dispose();
+    await Tflite.close();
     super.dispose();
   }
 
@@ -48,7 +49,7 @@ class ScanController extends GetxController {
     }
   }
 
-  initTflite() async {
+  loadModel() async {
     await Tflite.loadModel(
       model: 'assets/model.tflite',
       labels: 'assets/labels.txt',
@@ -56,7 +57,6 @@ class ScanController extends GetxController {
       numThreads: 1,
       useGpuDelegate: false,
     );
-    initCamera();
   }
 
   objectDetector(CameraImage image) async {
@@ -69,15 +69,21 @@ class ScanController extends GetxController {
       imageMean: 127.5,
       imageStd: 127.5,
       rotation: 90,
-      numResults: 1,
-      threshold: 0.4,
+      numResults: 2,
+      threshold: 0.1,
       asynch: true,
     );
-    if (detector != null) {
-      if (detector.first['confidence'] * 100 > 45) {
-        Logger().d('Result is $detector');
-      }
-      // Logger().d('Result when false is $detector');
-    }
+    detector!.forEach((response) {
+      Logger().d("huhuhahahah +${response['label']}");
+      label.value += response['label'] + " " + (response['confidence'] as double).toStringAsFixed(2) + "\n";
+    });
+
+    // if (detector != null) {
+    //   if (detector.first['confidence'] * 100 > 45) {
+    Logger().d('Result is ${detector.firstOrNull['label']}');
+    //     label = detector.first['label'].toString();
+    //   }
+    //   update();
+    // }
   }
 }
